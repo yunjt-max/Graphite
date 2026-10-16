@@ -1,0 +1,60 @@
+name: Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@0.2.121,cargo-about@0.9.2
+
+      - name: Install Binaryen
+        run: |
+          mkdir -p "$HOME/binaryen"
+          curl -sSfL "https://github.com/WebAssembly/binaryen/releases/download/version_130/binaryen-version_130-x86_64-linux.tar.gz" | tar xz -C "$HOME/binaryen" --strip-components=1
+          echo "$HOME/binaryen/bin" >> "$GITHUB_PATH"
+
+      - name: Set base path
+        run: sed -i '0,/\treturn {/s//\treturn {\n\t\tbase: "\/Graphite\/",/' frontend/vite.config.ts && sed -n 10,18p frontend/vite.config.ts
+
+      - name: Build
+        env:
+          NODE_ENV: production
+        run: cargo run build web
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
