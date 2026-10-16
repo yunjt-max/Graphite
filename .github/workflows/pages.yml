@@ -44,9 +44,8 @@ jobs:
 
       - name: Set base path
         run: |
-          sed -i '0,/	return {/s//	return {
-		base: "\/Graphite\/",/' frontend/vite.config.ts
-          sed -n 10,18p frontend/vite.config.ts
+          node -e "const fs=require('fs');const f='frontend/vite.config.ts';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace('return {','return { base: \'/Graphite/\','))"
+          sed -n 10,16p frontend/vite.config.ts
 
       - name: Build
         env:
