@@ -43,7 +43,10 @@ jobs:
           echo "$HOME/binaryen/bin" >> "$GITHUB_PATH"
 
       - name: Set base path
-        run: sed -i '0,/\treturn {/s//\treturn {\n\t\tbase: "\/Graphite\/",/' frontend/vite.config.ts && sed -n 10,18p frontend/vite.config.ts
+        run: |
+          sed -i '0,/	return {/s//	return {
+		base: "\/Graphite\/",/' frontend/vite.config.ts
+          sed -n 10,18p frontend/vite.config.ts
 
       - name: Build
         env:
